@@ -52,56 +52,24 @@ class Logger:
 from datamodel import OrderDepth, TradingState, Order
 from typing import Dict, List
 
-
-
 class Trader:
     def run(self, state: TradingState):
         result = {}
-        LIMIT = 80
-        FAIR_VALUE = 10000
+        LIMIT = 20
 
         if 'EMERALDS' in state.order_depths:
             orders = []
-            order_depth = state.order_depths['EMERALDS']
             current_pos = state.position.get('EMERALDS', 0)
 
-            # --- AGGRESSIVE TRADING (take opportunities) ---
-
-            # BUY if best ask < fair value
-            if order_depth.sell_orders:
-                best_ask = min(order_depth.sell_orders.keys())
-                best_ask_volume = order_depth.sell_orders[best_ask]
-
-                if best_ask < FAIR_VALUE:
-                    #buy_amount = -best_ask_volume
-                    buy_amount = min(-best_ask_volume, LIMIT - current_pos)
-                    if buy_amount > 0:
-                        orders.append(Order('EMERALDS', best_ask, buy_amount))
-                        current_pos += buy_amount  # update position locally
-
-            # SELL if best bid > fair value
-            if order_depth.buy_orders:
-                best_bid = max(order_depth.buy_orders.keys())
-                best_bid_volume = order_depth.buy_orders[best_bid]
-
-                if best_bid > FAIR_VALUE:
-                    #sell_amount = best_bid_volume
-                    sell_amount = min(best_bid_volume, LIMIT + current_pos)
-                    if sell_amount > 0:
-                        orders.append(Order('EMERALDS', best_bid, -sell_amount))
-                        current_pos -= sell_amount  # update position locally
-
-            # --- PASSIVE MARKET MAKING (if no strong signal) ---
-
-            # Post bid slightly below fair value
+            # Post a passive BUY below fair value — bots will sell to us at 9999
             buy_amount = LIMIT - current_pos
             if buy_amount > 0:
-                orders.append(Order('EMERALDS', FAIR_VALUE - 7, buy_amount))
+                orders.append(Order('EMERALDS', 9998, buy_amount))
 
-            # Post ask slightly above fair value
+            # Post a passive SELL above fair value — bots will buy from us at 10001
             sell_amount = LIMIT + current_pos
             if sell_amount > 0:
-                orders.append(Order('EMERALDS', FAIR_VALUE + 7, -sell_amount))
+                orders.append(Order('EMERALDS', 10003, -sell_amount))
 
             result['EMERALDS'] = orders
 

@@ -57,52 +57,41 @@ from typing import Dict, List
 class Trader:
     def run(self, state: TradingState):
         result = {}
-        LIMIT = 80
-        FAIR_VALUE = 10000
+        LIMIT = 20
+        FAIR  = 10000
 
-        if 'EMERALDS' in state.order_depths:
+        if 'TOMATOES' in state.order_depths:
+            order_depth = state.order_depths['TOMATOES']
             orders = []
-            order_depth = state.order_depths['EMERALDS']
-            current_pos = state.position.get('EMERALDS', 0)
+            current_pos = state.position.get('TOMATOES', 0)
 
-            # --- AGGRESSIVE TRADING (take opportunities) ---
-
-            # BUY if best ask < fair value
-            if order_depth.sell_orders:
-                best_ask = min(order_depth.sell_orders.keys())
-                best_ask_volume = order_depth.sell_orders[best_ask]
-
-                if best_ask < FAIR_VALUE:
-                    #buy_amount = -best_ask_volume
-                    buy_amount = min(-best_ask_volume, LIMIT - current_pos)
+            # Step 1: take any mispriced orders (guaranteed profit)
+            for ask_price, ask_vol in sorted(order_depth.sell_orders.items()):
+                if ask_price < FAIR:
+                    buy_amount = min(-ask_vol, LIMIT - current_pos)
                     if buy_amount > 0:
-                        orders.append(Order('EMERALDS', best_ask, buy_amount))
-                        current_pos += buy_amount  # update position locally
+                        orders.append(Order('TOMATOES', ask_price, buy_amount))
+                        current_pos += buy_amount
 
-            # SELL if best bid > fair value
-            if order_depth.buy_orders:
-                best_bid = max(order_depth.buy_orders.keys())
-                best_bid_volume = order_depth.buy_orders[best_bid]
-
-                if best_bid > FAIR_VALUE:
-                    #sell_amount = best_bid_volume
-                    sell_amount = min(best_bid_volume, LIMIT + current_pos)
+            for bid_price, bid_vol in sorted(order_depth.buy_orders.items(), reverse=True):
+                if bid_price > FAIR:
+                    sell_amount = min(bid_vol, LIMIT + current_pos)
                     if sell_amount > 0:
-                        orders.append(Order('EMERALDS', best_bid, -sell_amount))
-                        current_pos -= sell_amount  # update position locally
+                        orders.append(Order('TOMATOES', bid_price, -sell_amount))
+                        current_pos -= sell_amount
 
-            # --- PASSIVE MARKET MAKING (if no strong signal) ---
+            # Step 2: post skewed passive quotes with remaining capacity
+            skew = -round(current_pos / LIMIT * 2)
+            bid_price = 9999 + skew
+            ask_price = 10001 + skew
 
-            # Post bid slightly below fair value
-            buy_amount = LIMIT - current_pos
-            if buy_amount > 0:
-                orders.append(Order('EMERALDS', FAIR_VALUE - 7, buy_amount))
-
-            # Post ask slightly above fair value
+            buy_amount  = LIMIT - current_pos
             sell_amount = LIMIT + current_pos
+
+            if buy_amount > 0:
+                orders.append(Order('TOMATOES', bid_price, buy_amount))
             if sell_amount > 0:
-                orders.append(Order('EMERALDS', FAIR_VALUE + 7, -sell_amount))
+                orders.append(Order('TOMATOES', ask_price, -sell_amount))
 
-            result['EMERALDS'] = orders
-
+            result['TOMATOES'] = orders
         return result, 0, ""

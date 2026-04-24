@@ -52,57 +52,73 @@ class Logger:
 from datamodel import OrderDepth, TradingState, Order
 from typing import Dict, List
 
-
-
 class Trader:
     def run(self, state: TradingState):
         result = {}
-        LIMIT = 80
-        FAIR_VALUE = 10000
+        LIMIT = 20
+
+        result = {}
+        LIMIT = 20
+        FAIR_VALUE_EMERALD = 10000
+        FAIR_VALUE_TOMATO = 5000
 
         if 'EMERALDS' in state.order_depths:
             orders = []
             order_depth = state.order_depths['EMERALDS']
             current_pos = state.position.get('EMERALDS', 0)
 
-            # --- AGGRESSIVE TRADING (take opportunities) ---
-
-            # BUY if best ask < fair value
+            # Get best ask (lowest sell price)
             if order_depth.sell_orders:
                 best_ask = min(order_depth.sell_orders.keys())
                 best_ask_volume = order_depth.sell_orders[best_ask]
 
-                if best_ask < FAIR_VALUE:
-                    #buy_amount = -best_ask_volume
+                # BUY if price is below fair value
+                if best_ask < FAIR_VALUE_EMERALD:
                     buy_amount = min(-best_ask_volume, LIMIT - current_pos)
                     if buy_amount > 0:
                         orders.append(Order('EMERALDS', best_ask, buy_amount))
-                        current_pos += buy_amount  # update position locally
 
-            # SELL if best bid > fair value
+            # Get best bid (highest buy price)
             if order_depth.buy_orders:
                 best_bid = max(order_depth.buy_orders.keys())
                 best_bid_volume = order_depth.buy_orders[best_bid]
 
-                if best_bid > FAIR_VALUE:
-                    #sell_amount = best_bid_volume
+                # SELL if price is above fair value
+                if best_bid > FAIR_VALUE_EMERALD:
                     sell_amount = min(best_bid_volume, LIMIT + current_pos)
                     if sell_amount > 0:
                         orders.append(Order('EMERALDS', best_bid, -sell_amount))
-                        current_pos -= sell_amount  # update position locally
-
-            # --- PASSIVE MARKET MAKING (if no strong signal) ---
-
-            # Post bid slightly below fair value
-            buy_amount = LIMIT - current_pos
-            if buy_amount > 0:
-                orders.append(Order('EMERALDS', FAIR_VALUE - 7, buy_amount))
-
-            # Post ask slightly above fair value
-            sell_amount = LIMIT + current_pos
-            if sell_amount > 0:
-                orders.append(Order('EMERALDS', FAIR_VALUE + 7, -sell_amount))
 
             result['EMERALDS'] = orders
+
+
+        if 'TOMATOES' in state.order_depths:
+            orders = []
+            order_depth = state.order_depths['TOMATOES']
+            current_pos = state.position.get('TOMATOES', 0)
+
+            # Get best ask (lowest sell price)
+            if order_depth.sell_orders:
+                best_ask = min(order_depth.sell_orders.keys())
+                best_ask_volume = order_depth.sell_orders[best_ask]
+
+                # BUY if price is below fair value
+                if best_ask < FAIR_VALUE_TOMATO:
+                    buy_amount = min(-best_ask_volume, LIMIT - current_pos)
+                    if buy_amount > 0:
+                        orders.append(Order('TOMATOES', best_ask, buy_amount))
+
+            # Get best bid (highest buy price)
+            if order_depth.buy_orders:
+                best_bid = max(order_depth.buy_orders.keys())
+                best_bid_volume = order_depth.buy_orders[best_bid]
+
+                # SELL if price is above fair value
+                if best_bid > FAIR_VALUE_TOMATO:
+                    sell_amount = min(best_bid_volume, LIMIT + current_pos)
+                    if sell_amount > 0:
+                        orders.append(Order('TOMATOES', best_bid, -sell_amount))
+
+            result['TOMATOES'] = orders
 
         return result, 0, ""

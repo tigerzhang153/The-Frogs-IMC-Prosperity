@@ -168,7 +168,7 @@ OU_OVERRIDE = {
         'mu_decay': None,  # Keep mu fixed at 10k
         'theta': 1.0,      # Snap back instantly
         'sigma': 2.0,      # Low noise
-        'take_sigma': None,  # No need for sigma-based taking — just take any mispricings vs 10k
+        'take_sigma': 0.0,  # No need for sigma-based taking — just take any mispricings vs 10k
         'inv_skew': 3,   # Symmetrical
         'ema_decay': 0.99
     },
@@ -181,7 +181,7 @@ OU_OVERRIDE = {
         'sigma': 6.5,      # Higher volatility allowance
         'inv_skew': 3,  # Lean into inventory management
         'ema_decay': 0.95,   # Faster update for fair value
-        'take_sigma': None
+        'take_sigma': 0.0
     },
 
 }
@@ -270,7 +270,8 @@ SIGNAL_PARAMS = {
 # Per-product signal scaling: raw_signal *= scale before combining
 # 0.0 = signals disabled for this product, 1.0 = full effect
 SIGNAL_SCALE = {
-    'VOLCANIC_ROCK': 0.0,  # VR signals are noisy (VPIN false positives, OFI not predictive)
+    'VOLCANIC_ROCK': 0.0,
+    'TOMATOES': 0.0  # VR signals are noisy (VPIN false positives, OFI not predictive)
 }
 
 # ============================================================================
